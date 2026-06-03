@@ -1,7 +1,6 @@
 pipeline {
-    agent any 
+    agent any
 
-    
     environment {
         IMAGE_NAME = "manish275/my-maven-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
@@ -11,7 +10,6 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Checking out source code..."
                 checkout scm
             }
         }
@@ -23,12 +21,21 @@ pipeline {
             }
         }
 
+        stage('Build Maven Project') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Verify Jar') {
+            steps {
+                sh 'ls -la target'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                sh '''
-                    docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                '''
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
@@ -41,34 +48,15 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    '''
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo "Pushing Docker image..."
-                sh '''
-                    docker push $IMAGE_NAME:$IMAGE_TAG
-                '''
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
             }
-        }
-    }
-
-    post {
-        success {
-            echo "Successfully pushed image: ${IMAGE_NAME}:${IMAGE_TAG}"
-        }
-
-        failure {
-            echo "Pipeline failed"
-        }
-
-        cleanup {
-            echo "Cleaning up..."
         }
     }
 }
