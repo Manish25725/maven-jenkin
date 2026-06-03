@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools{
+        maven 'jenkins-maven'
+    }
+
     environment {
         IMAGE_NAME = "manish275/my-maven-app"
         IMAGE_TAG = "${BUILD_NUMBER}"
